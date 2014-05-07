@@ -23,6 +23,16 @@ bibliography will be annotated.
 Additionally, further notes and documents based off the bibliography
 may be included in `.tex` files in the `docs` directory.
 
+
+Process
+--------------------------------------------------
+
+The `bibliography.bib` file is maintained with
+[BibDesk](http://bibdesk.sourceforge.net/). The `annotations.tex` file
+is structured based on the "Using biblatex" section of
+[this tex.stackexchange answer](http://tex.stackexchange.com/a/33170).
+
+
 License
 --------------------------------------------------
 

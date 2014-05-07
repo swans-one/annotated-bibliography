@@ -1,0 +1,10 @@
+# Ignore latex/bibtex cruft
+*.aux
+*blx.bib
+*.bbl
+*.blg
+*.log
+*.run.xml
+
+# Ignore output
+*.pdf
