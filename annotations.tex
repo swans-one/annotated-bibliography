@@ -4,6 +4,10 @@
 
 \addbibresource{bibliography.bib}
 
+\newenvironment{annotatedcitation}[2]%
+{\bigskip \subsubsection*{#1} \noindent \fullcite{#2} \bigskip}%
+{\bigskip}
+
 \begin{document}
 
 \section{Papers}
@@ -14,9 +18,7 @@
 
 \subsection{Fiction}
 
-\subsubsection{Wool}
-
-\fullcite{howey12}
+\begin{annotatedcitation}{Wool}{howey12}
 
 
 A dystopian novel. Centers on a number of characters living in a
@@ -26,5 +28,7 @@ to a leadership position within the community. She soon begins to
 realize that their silo is not alone.
 
 I rate Wool very positively.
+
+\end{annotatedcitation}
 
 \end{document}
