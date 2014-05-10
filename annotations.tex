@@ -1,12 +1,31 @@
 \documentclass[12pt]{article}
 
 \usepackage[style=authoryear]{biblatex}
+\usepackage[dvipsnames,usenames]{color} % defined colors: 68 standard dvips colors
+\usepackage{listings}
 
 \addbibresource{bibliography.bib}
 
+\newcommand{\note}[1] {
+  \bigskip
+  \noindent
+  \emph{Note}: #1
+  \bigskip
+}
+
 \newenvironment{annotatedcitation}[2]%
-{\bigskip \subsubsection*{#1} \noindent \fullcite{#2} \bigskip}%
+{\bigskip \subsubsection*{#1}  \fullcite{#2} \\ \smallskip \noindent}%
 {\bigskip}
+
+\newcommand{\pythonblock}{
+  \lstset{
+    basicstyle=\footnotesize,
+    commentstyle=\color{BrickRed},
+    keywordstyle=\color{Purple},
+  }
+}
+
+\newcommand{\code}[1]{\texttt{#1}}
 
 \begin{document}
 
@@ -18,18 +37,135 @@
 
 \subsection{Fiction}
 
-\begin{annotatedcitation}{Wool}{howey12}
-A dystopian novel. Centers on a number of characters living in a
-``Silo.'' These characters do not realized that they are living in a
-post apocalyptic world until the protagonist, Juliette, is promotted
-to a leadership position within the community. She soon begins to
-realize that their silo is not alone.
+  \begin{annotatedcitation}{Wool}{howey12}
 
-I rate Wool very positively.
-\end{annotatedcitation}
+    A dystopian novel. Centers on a number of characters living in a
+    ``Silo.'' These characters do not realized that they are living in a
+    post apocalyptic world until the protagonist, Juliette, is promotted
+    to a leadership position within the community. She soon begins to
+    realize that their silo is not alone.
 
-\subsection{Video}
+    I rate Wool very positively.
+  \end{annotatedcitation}
 
 \subsection{Websites}
+
+  \begin{annotatedcitation}{A Curious Course on Coroutines and Concurrency}{beazley09}
+
+    Some key philosophical points:
+
+    \begin{itemize}
+      \item Generators are good for creating values, use them as part
+        of a for loop.
+      \item Coroutines are consumers of data, they are not related to
+        iteration.
+      \item Don't mix generators and coroutines. Coroutines are not
+        related to iteration.
+      \item Both can be used to set up pipes. Generators pull data
+        through with iteration, coroutines push data through with
+        send.
+      \item Coroutines can be used to handle event driven problems. A
+        stream of events acts as the 'driver' for a pipeline of
+        processing code.
+    \end{itemize}
+
+    \note{much of the following is implemented more professionally in
+    the \code{asyncio} package, included in the Python standard library
+    as of version 3.4.}
+
+    It's annoying to have to prime a coroutine with a call to
+    \code{.send(None)}. To do this automatically, we can create a
+    decorator that will prime our coroutines for us:
+
+    \pythonblock
+    \begin{lstlisting}[gobble=6, language=Python]
+      def coroutine(func):
+          def start(*args, **kwargs):
+              cr = func(*args, **kwargs)
+              cr.send(None)
+              return cr
+          return start
+    \end{lstlisting}
+
+    A useful pattern is to have a function that drives a coroutine,
+    where the coroutine is passed in as a ``target'' possibly in a
+    pipe, where one final coroutine acts as a ``sink,'' not passing values along.
+
+    \pythonblock
+    \begin{lstlisting}[gobble=6, language=Python]
+      # The 'driver'
+      def driver(file, target):
+          for line in file:
+              target.send(line)
+
+      # the 'target'
+      @coroutine
+      def grep(pattern, target):
+          while True:
+              line = (yield)
+              if pattern in line:
+                  target.send(line)
+
+      # the 'sink'
+      @coroutine
+      def lineprinter(target):
+          while True:
+              line = (yield)
+              print line,
+    \end{lstlisting}
+
+    Coroutines can also be encapsulated into their own thread of
+    execution. A python \code{Thread} takes a \code{target} as its
+    argument and runs that target in a separate thread of
+    execution. We use the native python threads to construct a
+    ``\code{threaded}'' coroutine which transparently passes messages
+    sent into the parent coroutine to a child ``\code{target}''
+    coroutine, executing in a separate thread.
+
+    \pythonblock
+    \begin{lstlisting}[gobble=6, language=Python]
+      from threading import Thread
+      from Queue import Queue
+
+      @coroutine
+      def threaded(target):
+          '''Pass signals sent to this coroutine to `target`,
+          running in a new thread.
+          '''
+          # Create a message queue.
+          messages = Queue()
+
+          # Close over the message queue and the `target` argument
+          # passed in to `threaded`
+          def run_target():
+              '''Pull messages from queue and pass them to target.
+              Thread safe.
+              '''
+              while True:
+                  item = messages.get()
+                  if item is GeneratorExit:
+                      target.close()
+                      return
+                  else:
+                      target.send(item)
+
+          # Create a new thread of execution, using the closure
+          # defined above as the function to be run in the thread.
+          Thread(target=run_target).start()
+
+          # Act as a coroutine, pushing messages onto the queue,
+          # shutting down child threads when shut down yourself.
+          try:
+              while True:
+                  item = (yield)
+                  messages.put(item)
+          except GeneratorExit:
+              messages.put(GeneratorExit)
+    \end{lstlisting}
+
+  \end{annotatedcitation}
+
+
+\subsection{Video}
 
 \end{document}
